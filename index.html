@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SOBRES</title>
+  <link rel="manifest" href="manifest.json" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <main class="app">
+    <header class="top">
+      <div>
+        <h1>SOBRES</h1>
+        <p data-i18n="subtitle">Administra tu dinero por sobres</p>
+      </div>
+      <div class="top-actions">
+        <button id="langBtn" class="small-btn lang-btn" type="button">English</button>
+        <button id="saveBtn" class="small-btn" type="button" data-i18n="save">Guardar</button>
+      </div>
+    </header>
+
+    <section class="card total-card">
+      <span data-i18n="totalAvailable">Total disponible</span>
+      <strong id="totalAmount">RD$ 0.00</strong>
+      <small data-i18n="totalNote">Solo suma los sobres marcados para el total</small>
+    </section>
+
+    <section class="actions-grid">
+      <button onclick="showPanel('addEnvelopePanel')" data-i18n="addEnvelopeBtn">+ Agregar sobre</button>
+      <button onclick="showPanel('addMoneyPanel')" data-i18n="addMoneyBtn">+ Agregar dinero</button>
+      <button onclick="showPanel('removeMoneyPanel')" data-i18n="removeMoneyBtn">- Sacar dinero</button>
+      <button onclick="showPanel('deleteEnvelopePanel')" data-i18n="deleteEnvelopeBtn">Eliminar sobre</button>
+    </section>
+
+    <section class="backup-grid">
+      <button class="backup-btn" onclick="exportBackup()" data-i18n="exportBackup">Exportar respaldo</button>
+      <button class="backup-btn" onclick="document.getElementById('importFile').click()" data-i18n="restoreBackup">Restaurar respaldo</button>
+      <input id="importFile" type="file" accept="application/json,.json" class="hidden" />
+    </section>
+
+    <section id="message" class="message hidden"></section>
+
+    <section id="addEnvelopePanel" class="card panel hidden">
+      <h2 data-i18n="addEnvelopeTitle">Agregar sobre</h2>
+      <label data-i18n="envelopeName">Nombre del sobre</label>
+      <input id="envelopeName" type="text" data-placeholder="envelopeNamePlaceholder" placeholder="Ej: Comida, Gasolina, Ahorros" />
+      <label data-i18n="color">Color</label>
+      <input id="envelopeColor" type="color" value="#2f855a" />
+      <button onclick="addEnvelope()" data-i18n="createEnvelope">Crear sobre</button>
+    </section>
+
+    <section id="addMoneyPanel" class="card panel hidden">
+      <h2 data-i18n="addMoneyTitle">Agregar dinero</h2>
+      <label data-i18n="envelope">Sobre</label>
+      <select id="addEnvelopeSelect"></select>
+      <label data-i18n="amountRD">Cantidad RD$</label>
+      <input id="addAmount" type="number" min="1" step="0.01" placeholder="0.00" />
+      <label data-i18n="description">Descripción</label>
+      <textarea id="addDescription" data-placeholder="addDescPlaceholder" placeholder="Ej: Sobró dinero, cobré un trabajo..."></textarea>
+      <button onclick="addMoney()" data-i18n="saveIncome">Guardar entrada</button>
+    </section>
+
+    <section id="removeMoneyPanel" class="card panel hidden">
+      <h2 data-i18n="removeMoneyTitle">Sacar dinero</h2>
+      <label data-i18n="envelope">Sobre</label>
+      <select id="removeEnvelopeSelect"></select>
+      <label data-i18n="amountRD">Cantidad RD$</label>
+      <input id="removeAmount" type="number" min="1" step="0.01" placeholder="0.00" />
+      <label data-i18n="description">Descripción</label>
+      <textarea id="removeDescription" data-placeholder="removeDescPlaceholder" placeholder="Ej: Compré gasolina, pagué la luz..."></textarea>
+      <button onclick="removeMoney()" data-i18n="saveExpense">Guardar salida</button>
+    </section>
+
+    <section id="deleteEnvelopePanel" class="card panel hidden">
+      <h2 data-i18n="deleteEnvelopeTitle">Eliminar sobre</h2>
+      <label data-i18n="envelope">Sobre</label>
+      <select id="deleteEnvelopeSelect"></select>
+      <button class="danger" onclick="askDeleteEnvelope()" data-i18n="continue">Continuar</button>
+    </section>
+
+    <section class="section-title">
+      <h2 data-i18n="myEnvelopes">Mis sobres</h2>
+      <span data-i18n="dragHelp">Mantén presionado y arrastra para ordenar</span>
+    </section>
+    <section id="envelopesList" class="envelopes"></section>
+
+    <section class="card deleted-card">
+      <button class="link-btn" onclick="toggleDeletedHistory()" data-i18n="deletedHistoryBtn">Historial de Sobres Eliminados</button>
+      <div id="deletedHistory" class="hidden"></div>
+    </section>
+  </main>
+
+  <div id="historyModal" class="modal hidden">
+    <div class="modal-content">
+      <button class="close" onclick="closeHistory()">×</button>
+      <h2 id="historyTitle"></h2>
+      <p id="historyBalance" class="balance-line"></p>
+      <div id="historyList"></div>
+    </div>
+  </div>
+
+  <div id="deleteModal" class="modal hidden">
+    <div class="modal-content">
+      <button class="close" onclick="closeDeleteModal()">×</button>
+      <h2 data-i18n="deleteEnvelopeTitle">Eliminar sobre</h2>
+      <p data-i18n="whatDo">¿Qué deseas hacer?</p>
+      <button class="danger" onclick="deleteEnvelope(true)" data-i18n="deleteAll">Borrar sobre y todo su historial</button>
+      <button onclick="deleteEnvelope(false)" data-i18n="deleteKeepHistory">Borrar sobre pero conservar historial</button>
+      <button class="secondary" onclick="closeDeleteModal()" data-i18n="cancel">Cancelar</button>
+    </div>
+  </div>
+
+
+  <div id="editTransactionModal" class="modal hidden">
+    <div class="modal-content">
+      <button class="close" onclick="closeEditTransaction()">×</button>
+      <h2 data-i18n="editTransactionTitle">Editar transacción</h2>
+      <label data-i18n="amountRD">Cantidad RD$</label>
+      <input id="editAmount" type="number" min="0.01" step="0.01" placeholder="0.00" />
+      <label data-i18n="description">Descripción</label>
+      <textarea id="editDescription"></textarea>
+      <button onclick="updateTransaction()" data-i18n="updateTransaction">Guardar cambios</button>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
